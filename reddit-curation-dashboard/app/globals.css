@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+/*
+  Dos paletas de bajo contraste, ambas cálidas para no cansar la vista.
+  El tema se fija con data-theme en <html> antes del primer pintado
+  (ver el script inline en app/layout.tsx). "dark" es el default.
+*/
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #1b1a17;
+  --sheet: #24221e;
+  --sheet-hover: #2a2823;
+  --ink: #e6dfd2;
+  --body: #cfc7b8;
+  --muted: #9a9284;
+  --line: #36332c;
+  --accent: #9dbfa7;
+  --accent-soft: #263129;
+  --accent-soft-hover: #2f3d33;
+  --selection: #3a4a3e;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --paper: #f4efe6;
+  --sheet: #faf6ee;
+  --sheet-hover: #ffffff;
+  --ink: #2d2a24;
+  --body: #3d3933;
+  --muted: #6f6a60;
+  --line: #ddd4c4;
+  --accent: #4f6f5a;
+  --accent-soft: #e6efe6;
+  --accent-soft-hover: #d7e5d7;
+  --selection: #dce8d8;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-sheet: var(--sheet);
+  --color-sheet-hover: var(--sheet-hover);
+  --color-ink: var(--ink);
+  --color-body: var(--body);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-soft-hover: var(--accent-soft-hover);
+  --font-sans: var(--font-source-sans);
+  --font-serif: var(--font-source-serif);
+}
+
+html {
+  background: var(--paper);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-source-sans), "Source Sans 3", sans-serif;
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--selection);
+}

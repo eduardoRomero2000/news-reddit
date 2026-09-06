@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Cuarto de guardia — Panel de contenido</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --ink:#111017;
+    --card:#211F29;
+    --line:#332F3C;
+    --paper:#EDE9E0;
+    --muted:#9C97A6;
+
+    --c-noticias:#5B8FE0;
+    --c-terror:#C1443A;
+    --c-experiencias:#3F9E77;
+    --c-chismes:#D6A03D;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  header{ padding:40px 32px 24px; border-bottom:1px solid var(--line); }
+  header h1{ font-family:'Fraunces',serif; font-weight:700; font-size:clamp(28px,4vw,42px); margin:0 0 6px; letter-spacing:-0.01em; }
+  header p{ margin:0; color:var(--muted); font-size:15px; max-width:60ch; line-height:1.5; }
+
+  .config{
+    padding:16px 32px; border-bottom:1px solid var(--line);
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+  }
+  .config input{
+    background:var(--card); border:1px solid var(--line); color:var(--paper);
+    padding:8px 10px; font-size:13px; font-family:'Inter',sans-serif; min-width:260px;
+  }
+  .config button{
+    background:var(--paper); color:var(--ink); border:none; padding:8px 14px;
+    font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .config .status{ font-size:12.5px; color:var(--muted); }
+
+  nav{ display:flex; gap:4px; padding:0 32px; margin-top:8px; border-bottom:1px solid var(--line); overflow-x:auto; }
+  nav button.tab{
+    background:none; border:none; color:var(--muted); font-family:'Inter',sans-serif;
+    font-size:14px; font-weight:500; padding:14px 18px; cursor:pointer; position:relative; white-space:nowrap;
+  }
+  nav button.tab .dot{ display:inline-block; width:7px;height:7px; border-radius:50%; margin-right:8px; vertical-align:middle; }
+  nav button.tab.active{ color:var(--paper); }
+  nav button.tab.active::after{ content:""; position:absolute; left:18px; right:18px; bottom:-1px; height:2px; background:var(--accent); }
+
+  .filters{ display:flex; gap:16px; padding:16px 32px 0; align-items:center; font-size:13px; color:var(--muted); }
+  .filters label{ display:flex; align-items:center; gap:6px; }
+
+  main{ padding:16px 32px 64px; max-width:1100px; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:16px; }
+
+  .card{
+    background:var(--card); border:1px solid var(--line); border-left:3px solid var(--accent);
+    padding:18px 20px; display:flex; flex-direction:column; gap:10px; transition:opacity .15s;
+  }
+  .card.used{ opacity:0.4; }
+  .card .sub{ color:var(--accent); font-weight:600; font-size:12px; }
+  .card h3{ font-family:'Fraunces',serif; font-weight:600; font-size:17px; line-height:1.35; margin:0; }
+  .card p.snippet{ margin:0; font-size:13.5px; line-height:1.55; color:#C9C5D2; }
+  .card .stats{
+    display:flex; gap:14px; align-items:center; font-size:12.5px; color:var(--muted);
+    margin-top:auto; padding-top:8px; border-top:1px solid var(--line);
+  }
+  .card a{ color:var(--muted); text-decoration:none; }
+  .card a:hover{ color:var(--paper); }
+  .card .use-btn{
+    margin-left:auto; background:none; border:1px solid var(--line); color:var(--muted);
+    font-size:11.5px; padding:4px 8px; cursor:pointer;
+  }
+  .card .use-btn:hover{ color:var(--paper); border-color:var(--paper); }
+
+  .banner{
+    background:#241E1A; border:1px solid #4A3A22; color:#E8C88B;
+    padding:12px 16px; font-size:13px; line-height:1.5; margin:16px 32px 0;
+  }
+  .empty{ color:var(--muted); font-size:14px; padding:24px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Cuarto de guardia</h1>
+  <p>Hilos con más tracción de Reddit, guardados en Supabase, organizados por sección.</p>
+</header>
+
+<div class="config">
+  <input id="cfg-url" placeholder="https://tuproyecto.supabase.co" />
+  <input id="cfg-key" placeholder="anon public key" />
+  <button id="cfg-connect">Conectar</button>
+  <span class="status" id="cfg-status">Sin conectar</span>
+</div>
+
+<div class="banner" id="banner" style="display:none">
+  No se pudo cargar de Supabase. Revisa la URL / anon key, o corre <code>fetch_reddit.py</code> primero para tener datos.
+</div>
+
+<nav id="tabs"></nav>
+<div class="filters">
+  <label><input type="checkbox" id="hide-used" checked> Ocultar ya usados</label>
+  <span id="count-label"></span>
+</div>
+
+<main>
+  <div class="grid" id="grid"></div>
+</main>
+
+<script>
+const CATEGORY_META = {
+  noticias:     { label: "Noticias",     color: "var(--c-noticias)" },
+  terror:       { label: "Terror",       color: "var(--c-terror)" },
+  experiencias: { label: "Experiencias", color: "var(--c-experiencias)" },
+  chismes:      { label: "Chismes",      color: "var(--c-chismes)" },
+};
+
+let supabase = null;
+let ALL_POSTS = [];
+let active = "noticias";
+let hideUsed = true;
+
+// Recuerda la config de conexion en este navegador (no son datos sensibles:
+// la anon key esta protegida por Row Level Security en el servidor).
+const savedUrl = localStorage.getItem("sb_url") || "";
+const savedKey = localStorage.getItem("sb_key") || "";
+document.getElementById("cfg-url").value = savedUrl;
+document.getElementById("cfg-key").value = savedKey;
+
+async function connect() {
+  const url = document.getElementById("cfg-url").value.trim();
+  const key = document.getElementById("cfg-key").value.trim();
+  if (!url || !key) return;
+  localStorage.setItem("sb_url", url);
+  localStorage.setItem("sb_key", key);
+  supabase = window.supabase.createClient(url, key);
+  await loadPosts();
+}
+
+async function loadPosts() {
+  document.getElementById("cfg-status").textContent = "Cargando...";
+  const { data, error } = await supabase
+    .from("reddit_posts")
+    .select("*")
+    .order("score", { ascending: false });
+
+  if (error) {
+    document.getElementById("banner").style.display = "block";
+    document.getElementById("cfg-status").textContent = "Error de conexión";
+    console.error(error);
+    return;
+  }
+  document.getElementById("banner").style.display = "none";
+  document.getElementById("cfg-status").textContent = `Conectado · ${data.length} posts`;
+  ALL_POSTS = data;
+  render();
+}
+
+async function markUsed(id, used) {
+  const { error } = await supabase
+    .from("reddit_posts")
+    .update({ used, used_at: used ? new Date().toISOString() : null })
+    .eq("id", id);
+  if (!error) {
+    const post = ALL_POSTS.find(p => p.id === id);
+    if (post) post.used = used;
+    render();
+  }
+}
+
+function render() {
+  const tabs = document.getElementById("tabs");
+  tabs.innerHTML = "";
+  Object.entries(CATEGORY_META).forEach(([key, meta]) => {
+    const count = ALL_POSTS.filter(p => p.category === key && (!hideUsed || !p.used)).length;
+    const btn = document.createElement("button");
+    btn.className = "tab" + (key === active ? " active" : "");
+    btn.style.setProperty("--accent", meta.color);
+    btn.innerHTML = `<span class="dot" style="background:${meta.color}"></span>${meta.label} · ${count}`;
+    btn.onclick = () => { active = key; render(); };
+    tabs.appendChild(btn);
+  });
+
+  document.body.style.setProperty("--accent", CATEGORY_META[active].color);
+
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  let posts = ALL_POSTS.filter(p => p.category === active);
+  if (hideUsed) posts = posts.filter(p => !p.used);
+
+  if (posts.length === 0) {
+    grid.innerHTML = `<div class="empty">Nada aquí todavía — corre fetch_reddit.py o desmarca "ocultar ya usados".</div>`;
+    return;
+  }
+
+  posts.forEach(post => {
+    const card = document.createElement("div");
+    card.className = "card" + (post.used ? " used" : "");
+    card.style.setProperty("--accent", CATEGORY_META[active].color);
+    card.innerHTML = `
+      <div class="sub" style="color:${CATEGORY_META[active].color}">r/${post.subreddit}</div>
+      <h3>${post.title}</h3>
+      ${post.selftext ? `<p class="snippet">${post.selftext}${post.selftext.length >= 400 ? '…' : ''}</p>` : ""}
+      <div class="stats">
+        <span>▲ ${(post.score||0).toLocaleString()}</span>
+        <span>💬 ${(post.comments||0).toLocaleString()}</span>
+        <a href="${post.url}" target="_blank" rel="noopener">Ver original ↗</a>
+        <button class="use-btn" data-id="${post.id}" data-used="${post.used}">
+          ${post.used ? "Deshacer" : "Marcar usado"}
+        </button>
+      </div>
+    `;
+    card.querySelector(".use-btn").onclick = (e) => {
+      const used = e.target.dataset.used === "true";
+      markUsed(post.id, !used);
+    };
+    grid.appendChild(card);
+  });
+}
+
+document.getElementById("cfg-connect").onclick = connect;
+document.getElementById("hide-used").onchange = (e) => { hideUsed = e.target.checked; render(); };
+
+if (savedUrl && savedKey) connect();
+</script>
+
+</body>
+</html>
