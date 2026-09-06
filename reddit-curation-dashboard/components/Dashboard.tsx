@@ -15,8 +15,8 @@ import type { CategoryKey, RedditPost } from "@/lib/types";
 
 export default function Dashboard() {
   const [posts, setPosts] = useState<RedditPost[]>([]);
-  const [category, setCategory] = useState<CategoryKey>("noticias");
-  const [hideUsed, setHideUsed] = useState(true);
+  const [category, setCategory] = useState<CategoryKey>("tecnologia");
+  const [hideRead, setHideRead] = useState(true);
   const [minScore, setMinScore] = useState(0);
   const [minComments, setMinComments] = useState(0);
   const [query, setQuery] = useState("");
@@ -50,7 +50,7 @@ export default function Dashboard() {
       }
       setError(null);
       setPosts(result.posts);
-      setStatus(`${result.posts.length} historias`);
+      setStatus(`${result.posts.length} hilos`);
     })();
     return () => {
       cancelled = true;
@@ -64,14 +64,14 @@ export default function Dashboard() {
   }
 
   const filters = useMemo(
-    () => ({ category, hideUsed, minScore, minComments, query }),
-    [category, hideUsed, minScore, minComments, query],
+    () => ({ category, hideUsed: hideRead, minScore, minComments, query }),
+    [category, hideRead, minScore, minComments, query],
   );
   const visible = useMemo(() => filterPosts(posts, filters), [posts, filters]);
   const stats = useMemo(() => analytics(posts), [posts]);
   const lastFetched = useMemo(() => lastFetchedLabel(posts), [posts]);
 
-  async function markUsed(id: string, used: boolean) {
+  async function markRead(id: string, used: boolean) {
     const supabase = getSupabase();
     const usedAt = used ? new Date().toISOString() : null;
     const { error: updateError } = await supabase
@@ -91,7 +91,7 @@ export default function Dashboard() {
 
   async function copyBrief(post: RedditPost) {
     await navigator.clipboard.writeText(briefText(post));
-    showToast("Brief copiado");
+    showToast("Resumen copiado");
   }
 
   function showToast(message: string) {
@@ -104,20 +104,21 @@ export default function Dashboard() {
       <header className="mb-8">
         <div className="flex items-start justify-between gap-4">
           <p className="mb-2 text-sm tracking-wide text-muted">
-            Curación de contenido
+            Agregador personal · solo lectura
           </p>
           <ThemeToggle />
         </div>
         <h1 className="font-serif text-[2.1rem] font-semibold leading-tight tracking-tight text-ink">
-          Cuarto de guardia
+          Radar
         </h1>
         <p className="mt-3 max-w-prose text-[17px] leading-7 text-muted">
-          Historias de Reddit para revisar sin prisa. Elige una, copia el brief
-          y márcala cuando ya la usaste.
+          Hilos destacados de subreddits públicos sobre tecnología, mercado
+          laboral y reclutamiento, en un solo panel privado. Nada se publica ni
+          se responde desde aquí.
         </p>
         <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
           <span>{status}</span>
-          {lastFetched ? <span>· última ingesta {lastFetched}</span> : null}
+          {lastFetched ? <span>· última actualización {lastFetched}</span> : null}
           <button
             type="button"
             onClick={refresh}
@@ -130,9 +131,9 @@ export default function Dashboard() {
       </header>
 
       <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label="En la base" value={String(stats.total)} />
-        <Stat label="Usadas esta semana" value={String(stats.usedThisWeek)} />
-        <Stat label="Usadas en total" value={String(stats.usedTotal)} />
+        <Stat label="Hilos guardados" value={String(stats.total)} />
+        <Stat label="Leídos esta semana" value={String(stats.usedThisWeek)} />
+        <Stat label="Leídos en total" value={String(stats.usedTotal)} />
         <Stat label="Más volumen" value={stats.topCategory} />
       </section>
 
@@ -146,7 +147,7 @@ export default function Dashboard() {
         {CATEGORY_KEYS.map((key) => {
           const active = key === category;
           const count = countVisible(posts, key, {
-            hideUsed,
+            hideUsed: hideRead,
             minScore,
             minComments,
             query,
@@ -175,11 +176,11 @@ export default function Dashboard() {
         <label className="flex items-center gap-2 text-[15px] text-ink">
           <input
             type="checkbox"
-            checked={hideUsed}
-            onChange={(e) => setHideUsed(e.target.checked)}
+            checked={hideRead}
+            onChange={(e) => setHideRead(e.target.checked)}
             className="size-4 accent-accent"
           />
-          Ocultar usadas
+          Ocultar leídos
         </label>
         <Field label="Score mín." value={minScore} onChange={setMinScore} />
         <Field
@@ -206,7 +207,7 @@ export default function Dashboard() {
       {visible.length === 0 ? (
         <p className="max-w-prose text-muted">
           Nada aquí todavía. Corre el ingestor, baja el umbral o desmarca
-          “ocultar usadas”.
+          “ocultar leídos”.
         </p>
       ) : (
         <ol className="space-y-5">
@@ -244,14 +245,14 @@ export default function Dashboard() {
                   onClick={() => void copyBrief(post)}
                   className="underline decoration-line underline-offset-4 hover:text-ink"
                 >
-                  Copiar brief
+                  Copiar resumen
                 </button>
                 <button
                   type="button"
-                  onClick={() => void markUsed(post.id, !post.used)}
+                  onClick={() => void markRead(post.id, !post.used)}
                   className="ml-auto rounded-full bg-accent-soft px-3 py-1 text-accent transition-colors hover:bg-accent-soft-hover"
                 >
-                  {post.used ? "Deshacer" : "Marcar usada"}
+                  {post.used ? "Marcar no leído" : "Marcar leído"}
                 </button>
               </div>
             </li>
@@ -327,7 +328,7 @@ type FetchResult =
 
 async function fetchPosts(): Promise<FetchResult> {
   if (!hasSupabaseConfig()) return { kind: "unconfigured" };
-  // Score desc como proxy de viralidad; las filas sin métricas (RSS)
+  // Score desc como proxy de relevancia; las filas sin métricas (RSS)
   // empatan en 0 y se desempatan por fecha del post más reciente.
   const { data, error } = await getSupabase()
     .from("reddit_posts")

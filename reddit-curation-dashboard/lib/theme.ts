@@ -1,6 +1,6 @@
 export type Theme = "dark" | "light";
 
-export const THEME_STORAGE_KEY = "cuarto-de-guardia:theme";
+export const THEME_STORAGE_KEY = "radar:theme";
 export const DEFAULT_THEME: Theme = "dark";
 
 /*

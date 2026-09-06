@@ -1,7 +1,8 @@
 # reddit-curation-ingestor
 
-Script que jala los top posts de Reddit por categoría y hace *upsert*
-en la tabla `reddit_posts` de Supabase. Correrlo varias veces no duplica:
+Script de solo lectura que consulta el listado *top* de subreddits públicos de
+tecnología, mercado laboral y reclutamiento, y hace *upsert* en la tabla
+`reddit_posts` de Supabase. No publica, no vota ni interactúa con Reddit. Correrlo varias veces no duplica:
 actualiza score, comentarios y `fetched_at`. Nunca toca `used` / `used_at`.
 
 ## Setup
@@ -27,7 +28,7 @@ python3 fetch_reddit.py
 ```
 
 Parámetros en `.env`: `TIME_FILTER` (`day` / `week` / `month`) y `LIMIT_PER_SUB`.
-Si una categoría trae poco volumen (terror en un solo día), sube a `week`.
+Si una categoría trae poco volumen en un solo día, sube a `week`.
 
 ## Cómo habla con Reddit (tres caminos)
 
@@ -43,8 +44,9 @@ que si más tarde entra OAuth, los valores reales se llenan sin pisar nada.
 
 ### Activar OAuth (recomendado, 5 minutos)
 
-1. Entra a <https://www.reddit.com/prefs/apps> con tu cuenta y crea una app
-   tipo **script** (redirect uri: `http://localhost:8080`, no se usa).
+1. Solicita acceso a la Data API (Responsible Builder Policy) y crea una app
+   tipo **script** en <https://www.reddit.com/prefs/apps> (redirect uri:
+   `http://localhost:8080`, no se usa).
 2. Copia el `client_id` (debajo del nombre de la app) y el `secret` a `.env`.
 3. Vuelve a correr `python3 fetch_reddit.py`. Debe loguear
    `Usando la API oficial de Reddit (OAuth)`.

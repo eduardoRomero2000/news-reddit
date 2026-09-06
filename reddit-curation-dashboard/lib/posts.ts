@@ -57,7 +57,7 @@ export function analytics(posts: RedditPost[]) {
 
 export function briefText(post: RedditPost): string {
   return [
-    `Categoría: ${post.category}`,
+    `Categoría: ${CATEGORIES[post.category]?.label ?? post.category}`,
     `Subreddit: r/${post.subreddit}`,
     `Título: ${post.title}`,
     `Link: ${post.url}`,

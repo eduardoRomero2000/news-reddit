@@ -1,9 +1,10 @@
 # reddit-curation-dashboard
 
-Panel en Next.js. Modo **oscuro por defecto** (cálido, bajo contraste) con
+Panel privado en Next.js para leer los hilos guardados por el ingestor. Solo
+lee la tabla y marca hilos como leídos; no habla con Reddit. Modo **oscuro por defecto** (cálido, bajo contraste) con
 toggle a modo papel en la esquina superior derecha; la preferencia se guarda
 en `localStorage` y se aplica antes del primer pintado para que no parpadee.
-Tipografía grande para revisar historias sin cansar la vista.
+Tipografía grande para leer sin cansar la vista.
 
 ## Uso
 
@@ -17,7 +18,7 @@ npm run dev
 Abre http://localhost:3000
 
 `.env.local` apunta a `http://127.0.0.1:55321` y usa la anon key de
-demo local. El dashboard solo lee y marca `used`; no inserta posts.
+demo local. El panel solo lee y marca `used` (leído); no inserta posts.
 
 ## Notas
 

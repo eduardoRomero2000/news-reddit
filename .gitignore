@@ -23,3 +23,6 @@ fetch.log
 # Supabase CLI (estado local)
 reddit-curation-supabase/supabase/.temp/
 reddit-curation-supabase/supabase/.branches/
+
+# Primera versión (uso personal previo); no forma parte del proyecto publicado
+legacy-v1/

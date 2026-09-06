@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Extrae posts destacados de Reddit y los guarda en Supabase.
+"""Agregador personal de noticias: extrae los hilos destacados de subreddits
+públicos sobre tecnología, mercado laboral y reclutamiento, y los guarda en
+Supabase para leerlos en un panel privado. Solo lectura: nunca publica, vota
+ni interactúa con contenido de Reddit.
 
 Tres caminos para hablar con Reddit, en este orden:
 
@@ -40,11 +43,13 @@ MAX_RETRIES = 3
 VALID_TIME_FILTERS = {"hour", "day", "week", "month", "year", "all"}
 ATOM_NS = {"a": "http://www.w3.org/2005/Atom"}
 
+# Categorías del panel y subreddits públicos que alimentan cada una.
+# Editable; las llaves se guardan en la columna `category` y las conoce el dashboard.
 CATEGORIES = {
-    "noticias": ("news", "worldnews", "mexico"),
-    "terror": ("nosleep", "LetsNotMeet", "creepypasta"),
-    "experiencias": ("tifu", "confession", "AmItheAsshole"),
-    "chismes": ("Fauxmoi", "popculturechat", "entertainment"),
+    "tecnologia": ("technology", "programming", "technews"),
+    "mercado_laboral": ("cscareerquestions", "ExperiencedDevs", "jobs"),
+    "reclutamiento": ("recruiting", "humanresources", "recruitinghell"),
+    "tendencias": ("artificial", "startups", "remotework"),
 }
 
 LOGGER = logging.getLogger("reddit-curation-ingestor")

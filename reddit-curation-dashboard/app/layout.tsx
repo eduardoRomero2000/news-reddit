@@ -16,8 +16,9 @@ const sourceSerif = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
-  title: "Cuarto de guardia",
-  description: "Panel de curación de historias de Reddit",
+  title: "Radar",
+  description:
+    "Agregador personal de noticias de tecnología y reclutamiento desde subreddits públicos",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
